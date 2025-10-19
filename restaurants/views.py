@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
 
-from .models import Restaurant, Table
+from .models import Restaurant, Table, Dish
 from .serializers import (
     RestaurantSerializer,
     RestaurantCreateSerializer,
@@ -16,7 +16,13 @@ from .serializers import (
     TableSerializer,
     TableCreateSerializer,
     TableMinimalSerializer,
-    AvailableTablesSerializer
+    AvailableTablesSerializer,
+    DishSerializer,
+    DishCreateSerializer,
+    DishUpdateSerializer,
+    DishListSerializer,
+    DishSearchSerializer,
+    DishMinimalSerializer
 )
 from core.permissions import IsRestaurantOwnerOrReadOnly
 
@@ -270,3 +276,183 @@ class TableViewSet(viewsets.GenericViewSet):
         self.check_object_permissions(request, instance)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class DishViewSet(viewsets.GenericViewSet):
+    """
+    ViewSet для управления блюдами.
+    
+    list: Список всех блюд (с фильтрацией по ресторану)
+    retrieve: Детали блюда
+    create: Создание блюда (только владелец ресторана)
+    update: Обновление блюда
+    partial_update: Частичное обновление блюда
+    destroy: Удаление блюда
+    """
+    queryset = Dish.objects.all()
+    serializer_class = DishSerializer
+    
+    def get_permissions(self):
+        """Определяем права доступа"""
+        if self.action in ['list', 'retrieve', 'search', 'restaurant_dishes']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated(), IsRestaurantOwnerOrReadOnly()]
+    
+    def get_serializer_class(self):
+        """Выбираем сериализатор"""
+        if self.action == 'create':
+            return DishCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return DishUpdateSerializer
+        elif self.action == 'list':
+            return DishListSerializer
+        elif self.action == 'search':
+            return DishSearchSerializer
+        return DishSerializer
+    
+    def get_queryset(self):
+        """Фильтрация queryset"""
+        queryset = super().get_queryset().select_related('restaurant')
+        
+        # Фильтрация по ресторану
+        restaurant_id = self.request.query_params.get('restaurant_id', None)
+        if restaurant_id:
+            queryset = queryset.filter(restaurant_id=restaurant_id)
+        
+        # Фильтрация по категории
+        category = self.request.query_params.get('category', None)
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        # Фильтрация по цене
+        min_price = self.request.query_params.get('min_price', None)
+        if min_price:
+            queryset = queryset.filter(price__gte=float(min_price))
+        
+        max_price = self.request.query_params.get('max_price', None)
+        if max_price:
+            queryset = queryset.filter(price__lte=float(max_price))
+        
+        # Фильтрация по диетическим предпочтениям
+        vegetarian = self.request.query_params.get('vegetarian', None)
+        if vegetarian and vegetarian.lower() == 'true':
+            queryset = queryset.filter(is_vegetarian=True)
+        
+        vegan = self.request.query_params.get('vegan', None)
+        if vegan and vegan.lower() == 'true':
+            queryset = queryset.filter(is_vegan=True)
+        
+        gluten_free = self.request.query_params.get('gluten_free', None)
+        if gluten_free and gluten_free.lower() == 'true':
+            queryset = queryset.filter(is_gluten_free=True)
+        
+        # Фильтрация по доступности
+        available = self.request.query_params.get('available', None)
+        if available is not None:
+            queryset = queryset.filter(is_available=available.lower() == 'true')
+        
+        # Сортировка
+        ordering = self.request.query_params.get('ordering', 'name')
+        queryset = queryset.order_by(ordering)
+        
+        return queryset
+    
+    def list(self, request, *args, **kwargs):
+        """GET /api/dishes/ - список блюд"""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def retrieve(self, request, *args, **kwargs):
+        """GET /api/dishes/<id>/ - детали блюда"""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+    def create(self, request, *args, **kwargs):
+        """POST /api/dishes/ - создание блюда"""
+        restaurant_id = request.data.get('restaurant')
+        
+        # Проверяем права на создание блюда
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+            if not (restaurant.owner == request.user or request.user.is_admin_user):
+                return Response({
+                    'error': 'You do not have permission to add dishes to this restaurant.'
+                }, status=status.HTTP_403_FORBIDDEN)
+        except Restaurant.DoesNotExist:
+            return Response({
+                'error': 'Restaurant not found.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.get_serializer(data=request.data, context={'restaurant_id': restaurant_id})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def update(self, request, *args, **kwargs):
+        """PUT /api/dishes/<id>/ - полное обновление"""
+        instance = self.get_object()
+        self.check_object_permissions(request, instance)
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """PATCH /api/dishes/<id>/ - частичное обновление"""
+        instance = self.get_object()
+        self.check_object_permissions(request, instance)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    def destroy(self, request, *args, **kwargs):
+        """DELETE /api/dishes/<id>/ - удаление блюда"""
+        instance = self.get_object()
+        self.check_object_permissions(request, instance)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def search(self, request):
+        """
+        GET /api/dishes/search/?q=query - поиск блюд
+        """
+        query = request.query_params.get('q', '')
+        if not query:
+            return Response([], status=status.HTTP_200_OK)
+        
+        queryset = self.get_queryset().filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
+        )
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny])
+    def restaurant_dishes(self, request, pk=None):
+        """
+        GET /api/dishes/restaurant-dishes/<restaurant_id>/ - блюда конкретного ресторана
+        """
+        try:
+            restaurant = Restaurant.objects.get(id=pk)
+            dishes = Dish.objects.filter(restaurant=restaurant).select_related('restaurant')
+            
+            # Применяем фильтры
+            category = request.query_params.get('category', None)
+            if category:
+                dishes = dishes.filter(category=category)
+            
+            available = request.query_params.get('available', None)
+            if available is not None:
+                dishes = dishes.filter(is_available=available.lower() == 'true')
+            
+            serializer = DishListSerializer(dishes, many=True)
+            return Response(serializer.data)
+        except Restaurant.DoesNotExist:
+            return Response({
+                'error': 'Restaurant not found.'
+            }, status=status.HTTP_404_NOT_FOUND)

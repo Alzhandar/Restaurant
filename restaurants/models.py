@@ -176,6 +176,18 @@ class TableLocation(models.TextChoices):
     WINDOW = 'window', 'У окна'
 
 
+class DishCategory(models.TextChoices):
+    """Categories of dishes"""
+    APPETIZER = 'appetizer', 'Закуски'
+    SOUP = 'soup', 'Супы'
+    SALAD = 'salad', 'Салаты'
+    MAIN_COURSE = 'main_course', 'Основные блюда'
+    DESSERT = 'dessert', 'Десерты'
+    BEVERAGE = 'beverage', 'Напитки'
+    ALCOHOL = 'alcohol', 'Алкоголь'
+    OTHER = 'other', 'Другое'
+
+
 class Table(models.Model):
     """
     Table model
@@ -235,4 +247,104 @@ class Table(models.Model):
     
     def __str__(self):
         return f"{self.restaurant.name} - Table {self.table_number} ({self.capacity} seats)"
+
+
+class Dish(models.Model):
+    """
+    Dish model
+    
+    Represents a dish in a restaurant's menu.
+    Each dish belongs to a restaurant and has category, price, and description.
+    """
+    
+    restaurant = models.ForeignKey(
+        Restaurant,
+        on_delete=models.CASCADE,
+        related_name='dishes',
+        verbose_name='restaurant',
+        help_text='Restaurant this dish belongs to'
+    )
+    
+    # Basic Information
+    name = models.CharField(
+        'name',
+        max_length=200,
+        help_text='Dish name'
+    )
+    description = models.TextField(
+        'description',
+        blank=True,
+        help_text='Dish description'
+    )
+    category = models.CharField(
+        'category',
+        max_length=20,
+        choices=DishCategory.choices,
+        help_text='Dish category'
+    )
+    
+    # Pricing
+    price = models.DecimalField(
+        'price',
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text='Dish price'
+    )
+    
+    # Additional Information
+    preparation_time = models.PositiveSmallIntegerField(
+        'preparation time',
+        null=True,
+        blank=True,
+        help_text='Preparation time in minutes'
+    )
+    is_vegetarian = models.BooleanField(
+        'vegetarian',
+        default=False,
+        help_text='Is dish vegetarian'
+    )
+    is_vegan = models.BooleanField(
+        'vegan',
+        default=False,
+        help_text='Is dish vegan'
+    )
+    is_gluten_free = models.BooleanField(
+        'gluten free',
+        default=False,
+        help_text='Is dish gluten free'
+    )
+    is_spicy = models.BooleanField(
+        'spicy',
+        default=False,
+        help_text='Is dish spicy'
+    )
+    
+    # Availability
+    is_available = models.BooleanField(
+        'available',
+        default=True,
+        help_text='Is dish available for ordering'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField('created at', auto_now_add=True)
+    updated_at = models.DateTimeField('updated at', auto_now=True)
+    
+    class Meta:
+        verbose_name = 'dish'
+        verbose_name_plural = 'dishes'
+        ordering = ['restaurant', 'category', 'name']
+        indexes = [
+            models.Index(fields=['restaurant']),
+            models.Index(fields=['category']),
+            models.Index(fields=['price']),
+            models.Index(fields=['is_available']),
+            models.Index(fields=['is_vegetarian']),
+            models.Index(fields=['is_vegan']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.restaurant.name} ({self.price} руб.)"
 

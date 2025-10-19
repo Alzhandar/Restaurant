@@ -3,7 +3,7 @@ Serializers for restaurants app
 """
 
 from rest_framework import serializers
-from .models import Restaurant, Table, CuisineType, TableLocation
+from .models import Restaurant, Table, Dish, CuisineType, TableLocation, DishCategory
 from users.serializers import UserMinimalSerializer
 
 
@@ -197,3 +197,123 @@ class AvailableTablesSerializer(serializers.Serializer):
             })
         
         return attrs
+
+
+class DishSerializer(serializers.ModelSerializer):
+    """Serializer for Dish model"""
+    
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    
+    class Meta:
+        model = Dish
+        fields = [
+            'id', 'restaurant', 'restaurant_name', 'name', 'description',
+            'category', 'price', 'preparation_time',
+            'is_vegetarian', 'is_vegan', 'is_gluten_free', 'is_spicy',
+            'is_available', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def validate_price(self, value):
+        """Validate price is positive"""
+        if value < 0:
+            raise serializers.ValidationError("Price must be positive")
+        return value
+    
+    def validate_preparation_time(self, value):
+        """Validate preparation time"""
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Preparation time must be positive")
+        return value
+
+
+class DishMinimalSerializer(serializers.ModelSerializer):
+    """Minimal dish info for nested serializers"""
+    
+    class Meta:
+        model = Dish
+        fields = ['id', 'name', 'price', 'category', 'is_available']
+        read_only_fields = ['id']
+
+
+class DishCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a dish"""
+    
+    class Meta:
+        model = Dish
+        fields = [
+            'name', 'description', 'category', 'price',
+            'preparation_time', 'is_vegetarian', 'is_vegan',
+            'is_gluten_free', 'is_spicy', 'is_available'
+        ]
+    
+    def validate_price(self, value):
+        """Validate price"""
+        if value < 0:
+            raise serializers.ValidationError("Price must be positive")
+        return value
+    
+    def validate_preparation_time(self, value):
+        """Validate preparation time"""
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Preparation time must be positive")
+        return value
+    
+    def create(self, validated_data):
+        """Create dish with restaurant from context"""
+        validated_data['restaurant_id'] = self.context['restaurant_id']
+        return Dish.objects.create(**validated_data)
+
+
+class DishUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating a dish"""
+    
+    class Meta:
+        model = Dish
+        fields = [
+            'name', 'description', 'category', 'price',
+            'preparation_time', 'is_vegetarian', 'is_vegan',
+            'is_gluten_free', 'is_spicy', 'is_available'
+        ]
+    
+    def validate_price(self, value):
+        """Validate price"""
+        if value < 0:
+            raise serializers.ValidationError("Price must be positive")
+        return value
+    
+    def validate_preparation_time(self, value):
+        """Validate preparation time"""
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Preparation time must be positive")
+        return value
+
+
+class DishListSerializer(serializers.ModelSerializer):
+    """Minimal serializer for dish list"""
+    
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    
+    class Meta:
+        model = Dish
+        fields = [
+            'id', 'name', 'restaurant_name', 'category', 'price',
+            'is_vegetarian', 'is_vegan', 'is_available'
+        ]
+        read_only_fields = ['id']
+
+
+class DishSearchSerializer(serializers.ModelSerializer):
+    """Serializer for dish search results"""
+    
+    restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
+    restaurant_city = serializers.CharField(source='restaurant.city', read_only=True)
+    
+    class Meta:
+        model = Dish
+        fields = [
+            'id', 'name', 'description', 'category', 'price',
+            'restaurant_name', 'restaurant_city',
+            'is_vegetarian', 'is_vegan', 'is_available'
+        ]
+        read_only_fields = ['id']

@@ -4,7 +4,7 @@ URL patterns для restaurants app.
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import RestaurantViewSet, TableViewSet
+from .views import RestaurantViewSet, TableViewSet, DishViewSet
 
 app_name = 'restaurants'
 
@@ -12,6 +12,7 @@ app_name = 'restaurants'
 router = DefaultRouter()
 router.register(r'restaurants', RestaurantViewSet, basename='restaurant')
 router.register(r'tables', TableViewSet, basename='table')
+router.register(r'dishes', DishViewSet, basename='dish')
 
 urlpatterns = [
     path('', include(router.urls)),
