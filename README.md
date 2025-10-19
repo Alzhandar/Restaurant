@@ -1,6 +1,6 @@
 # 🍽️ Restaurant Reservation System
 
-**Финальный проект по курсу Highload Backend**
+**Проект по курсу Highload Backend**
 
 ---
 
@@ -486,15 +486,9 @@ restaurant-reservation/
 
 ## 👥 Команда
 
-- **Автор:** [Ваше имя]
+- **Авторы:** Daribayev Alzhan, Kuatuly Abukhanifa, Yerbossyn Magzhan
 - **Курс:** Highload Backend
 - **Дата:** Октябрь 2025
-
----
-
-## 📄 Лицензия
-
-Проект создан в учебных целях для курса Highload Backend.
 
 ---
 
