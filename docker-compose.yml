@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   db:
     image: postgres:16-alpine
     container_name: restaurant_db
@@ -21,7 +20,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Cache & Message Broker
   redis:
     image: redis:7-alpine
     container_name: restaurant_redis
@@ -33,7 +31,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Django Web Application
   web:
     build: .
     container_name: restaurant_web
@@ -53,7 +50,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Celery Worker
   celery_worker:
     build: .
     container_name: restaurant_celery_worker
@@ -68,7 +64,6 @@ services:
       - web
     restart: unless-stopped
 
-  # Celery Beat (Scheduler)
   celery_beat:
     build: .
     container_name: restaurant_celery_beat
