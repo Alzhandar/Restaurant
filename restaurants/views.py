@@ -1,6 +1,3 @@
-"""
-Views для управления ресторанами и столиками.
-"""
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -28,22 +25,11 @@ from core.permissions import IsRestaurantOwnerOrReadOnly
 
 
 class RestaurantViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления ресторанами.
-    
-    list: Список всех ресторанов
-    retrieve: Детали ресторана
-    create: Создание ресторана (только для restaurant_owner и admin)
-    update: Обновление ресторана (только владелец или admin)
-    partial_update: Частичное обновление ресторана
-    destroy: Удаление ресторана
-    """
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
     permission_classes = [IsRestaurantOwnerOrReadOnly]
     
     def get_permissions(self):
-        """Определяем права доступа"""
         if self.action in ['list', 'retrieve', 'search']:
             return [permissions.AllowAny()]
         elif self.action == 'create':
@@ -53,7 +39,6 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         return [IsRestaurantOwnerOrReadOnly()]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор"""
         if self.action == 'create':
             return RestaurantCreateSerializer
         elif self.action in ['update', 'partial_update']:
@@ -65,21 +50,17 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         return RestaurantSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset"""
         queryset = super().get_queryset().select_related('owner')
         
         if self.action == 'list':
-            # Фильтрация по кухне
             cuisine = self.request.query_params.get('cuisine', None)
             if cuisine:
                 queryset = queryset.filter(cuisine_type=cuisine)
             
-            # Фильтрация по рейтингу
             min_rating = self.request.query_params.get('min_rating', None)
             if min_rating:
                 queryset = queryset.filter(average_rating__gte=float(min_rating))
             
-            # Сортировка
             ordering = self.request.query_params.get('ordering', '-created_at')
             queryset = queryset.order_by(ordering)
         
@@ -183,36 +164,22 @@ class RestaurantViewSet(viewsets.GenericViewSet):
 
 
 class TableViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления столиками.
-    
-    list: Список всех столиков (с фильтрацией по ресторану)
-    retrieve: Детали столика
-    create: Создание столика (только владелец ресторана)
-    update: Обновление столика
-    partial_update: Частичное обновление столика
-    destroy: Удаление столика
-    """
     queryset = Table.objects.all()
     serializer_class = TableSerializer
     
     def get_permissions(self):
-        """Определяем права доступа"""
         if self.action in ['list', 'retrieve']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsRestaurantOwnerOrReadOnly()]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор"""
         if self.action == 'create':
             return TableCreateSerializer
         return TableSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset"""
         queryset = super().get_queryset().select_related('restaurant')
         
-        # Фильтрация по ресторану
         restaurant_id = self.request.query_params.get('restaurant_id', None)
         if restaurant_id:
             queryset = queryset.filter(restaurant_id=restaurant_id)
@@ -279,27 +246,15 @@ class TableViewSet(viewsets.GenericViewSet):
 
 
 class DishViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления блюдами.
-    
-    list: Список всех блюд (с фильтрацией по ресторану)
-    retrieve: Детали блюда
-    create: Создание блюда (только владелец ресторана)
-    update: Обновление блюда
-    partial_update: Частичное обновление блюда
-    destroy: Удаление блюда
-    """
     queryset = Dish.objects.all()
     serializer_class = DishSerializer
     
     def get_permissions(self):
-        """Определяем права доступа"""
         if self.action in ['list', 'retrieve', 'search', 'restaurant_dishes']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsRestaurantOwnerOrReadOnly()]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор"""
         if self.action == 'create':
             return DishCreateSerializer
         elif self.action in ['update', 'partial_update']:
@@ -311,20 +266,16 @@ class DishViewSet(viewsets.GenericViewSet):
         return DishSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset"""
         queryset = super().get_queryset().select_related('restaurant')
         
-        # Фильтрация по ресторану
         restaurant_id = self.request.query_params.get('restaurant_id', None)
         if restaurant_id:
             queryset = queryset.filter(restaurant_id=restaurant_id)
         
-        # Фильтрация по категории
         category = self.request.query_params.get('category', None)
         if category:
             queryset = queryset.filter(category=category)
         
-        # Фильтрация по цене
         min_price = self.request.query_params.get('min_price', None)
         if min_price:
             queryset = queryset.filter(price__gte=float(min_price))
@@ -333,7 +284,6 @@ class DishViewSet(viewsets.GenericViewSet):
         if max_price:
             queryset = queryset.filter(price__lte=float(max_price))
         
-        # Фильтрация по диетическим предпочтениям
         vegetarian = self.request.query_params.get('vegetarian', None)
         if vegetarian and vegetarian.lower() == 'true':
             queryset = queryset.filter(is_vegetarian=True)
@@ -346,12 +296,10 @@ class DishViewSet(viewsets.GenericViewSet):
         if gluten_free and gluten_free.lower() == 'true':
             queryset = queryset.filter(is_gluten_free=True)
         
-        # Фильтрация по доступности
         available = self.request.query_params.get('available', None)
         if available is not None:
             queryset = queryset.filter(is_available=available.lower() == 'true')
         
-        # Сортировка
         ordering = self.request.query_params.get('ordering', 'name')
         queryset = queryset.order_by(ordering)
         
@@ -373,7 +321,6 @@ class DishViewSet(viewsets.GenericViewSet):
         """POST /api/dishes/ - создание блюда"""
         restaurant_id = request.data.get('restaurant')
         
-        # Проверяем права на создание блюда
         try:
             restaurant = Restaurant.objects.get(id=restaurant_id)
             if not (restaurant.owner == request.user or request.user.is_admin_user):
@@ -441,7 +388,6 @@ class DishViewSet(viewsets.GenericViewSet):
             restaurant = Restaurant.objects.get(id=pk)
             dishes = Dish.objects.filter(restaurant=restaurant).select_related('restaurant')
             
-            # Применяем фильтры
             category = request.query_params.get('category', None)
             if category:
                 dishes = dishes.filter(category=category)

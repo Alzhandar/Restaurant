@@ -1,6 +1,3 @@
-"""
-Views для управления бронированиями с использованием ViewSet.
-"""
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,22 +15,11 @@ from core.permissions import IsReservationParticipant
 
 
 class ReservationViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления бронированиями.
-    
-    list: Список бронирований (с учетом прав доступа)
-    retrieve: Детали бронирования
-    create: Создание бронирования
-    update: Обновление бронирования
-    partial_update: Частичное обновление
-    destroy: Отмена бронирования
-    """
     queryset = Reservation.objects.all()
     serializer_class = ReservationSerializer
     permission_classes = [permissions.IsAuthenticated, IsReservationParticipant]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор"""
         if self.action == 'create':
             return ReservationCreateSerializer
         elif self.action in ['update', 'partial_update']:
@@ -45,32 +31,25 @@ class ReservationViewSet(viewsets.GenericViewSet):
         return ReservationSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset с учетом прав"""
         user = self.request.user
         queryset = super().get_queryset().select_related(
             'user', 'restaurant', 'table'
         ).order_by('-reservation_date', '-start_time')
         
-        # Владельцы видят бронирования своих ресторанов
         if user.is_owner and not user.is_admin_user:
             queryset = queryset.filter(restaurant__owner=user)
-        # Обычные пользователи видят только свои бронирования
         elif not user.is_admin_user:
             queryset = queryset.filter(user=user)
         
-        # Дополнительные фильтры из query params
         if self.action == 'list':
-            # Фильтр по статусу
             status_filter = self.request.query_params.get('status', None)
             if status_filter:
                 queryset = queryset.filter(status=status_filter)
             
-            # Фильтр по ресторану
             restaurant_id = self.request.query_params.get('restaurant', None)
             if restaurant_id:
                 queryset = queryset.filter(restaurant_id=restaurant_id)
             
-            # Фильтр по дате
             date_from = self.request.query_params.get('date_from', None)
             date_to = self.request.query_params.get('date_to', None)
             if date_from:
@@ -122,7 +101,6 @@ class ReservationViewSet(viewsets.GenericViewSet):
         instance = self.get_object()
         self.check_object_permissions(request, instance)
         
-        # Проверяем, можно ли отменить
         if instance.status in [ReservationStatus.COMPLETED, ReservationStatus.NO_SHOW]:
             return Response({
                 'error': 'Cannot cancel completed or no-show reservations.'
@@ -169,7 +147,6 @@ class ReservationViewSet(viewsets.GenericViewSet):
             'reservation_date', 'start_time'
         )
         
-        # Фильтрация по роли
         if user.is_owner and not user.is_admin_user:
             queryset = queryset.filter(restaurant__owner=user)
         elif not user.is_admin_user:
@@ -192,7 +169,6 @@ class ReservationViewSet(viewsets.GenericViewSet):
             '-reservation_date', '-start_time'
         )
         
-        # Фильтрация по роли
         if user.is_owner and not user.is_admin_user:
             queryset = queryset.filter(restaurant__owner=user)
         elif not user.is_admin_user:
@@ -210,7 +186,6 @@ class ReservationViewSet(viewsets.GenericViewSet):
         instance = self.get_object()
         user = request.user
         
-        # Проверяем права: только владелец ресторана или админ
         if not (instance.restaurant.owner == user or user.is_admin_user):
             return Response({
                 'error': 'Only restaurant owner or admin can update reservation status.'

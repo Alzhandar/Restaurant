@@ -1,29 +1,21 @@
-"""
-Admin configuration for restaurants app
-"""
-
 from django.contrib import admin
 from .models import Restaurant, Table, Dish
 
 
 class TableInline(admin.TabularInline):
-    """Inline admin for tables"""
     model = Table
     extra = 1
     fields = ['table_number', 'capacity', 'location_in_restaurant', 'is_available']
 
 
 class DishInline(admin.TabularInline):
-    """Inline admin for dishes"""
     model = Dish
     extra = 1
     fields = ['name', 'category', 'price', 'is_available']
 
 
 @admin.register(Restaurant)
-class RestaurantAdmin(admin.ModelAdmin):
-    """Restaurant admin"""
-    
+class RestaurantAdmin(admin.ModelAdmin):    
     list_display = ['name', 'city', 'cuisine_type', 'owner', 'average_rating', 'is_active', 'created_at']
     list_filter = ['cuisine_type', 'city', 'is_active', 'created_at']
     search_fields = ['name', 'city', 'address', 'owner__email']
@@ -56,9 +48,7 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 
 @admin.register(Table)
-class TableAdmin(admin.ModelAdmin):
-    """Table admin"""
-    
+class TableAdmin(admin.ModelAdmin):    
     list_display = ['restaurant', 'table_number', 'capacity', 'location_in_restaurant', 'is_available']
     list_filter = ['restaurant', 'capacity', 'location_in_restaurant', 'is_available']
     search_fields = ['restaurant__name', 'table_number']
@@ -67,8 +57,6 @@ class TableAdmin(admin.ModelAdmin):
 
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
-    """Dish admin"""
-    
     list_display = ['name', 'restaurant', 'category', 'price', 'is_available', 'created_at']
     list_filter = ['category', 'is_available', 'is_vegetarian', 'is_vegan', 'is_gluten_free', 'is_spicy', 'created_at']
     search_fields = ['name', 'description', 'restaurant__name']

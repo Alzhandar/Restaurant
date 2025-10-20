@@ -1,6 +1,3 @@
-"""
-Views для управления пользователями.
-"""
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,21 +15,10 @@ User = get_user_model()
 
 
 class UserViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления пользователями.
-    
-    list: Список всех пользователей (только admin)
-    retrieve: Детали пользователя
-    create: Регистрация нового пользователя
-    update: Обновление пользователя
-    partial_update: Частичное обновление пользователя
-    destroy: Деактивация пользователя (мягкое удаление)
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     
     def get_permissions(self):
-        """Определяем права доступа для разных действий"""
         if self.action in ['create', 'register']:
             return [permissions.AllowAny()]
         elif self.action in ['list', 'destroy']:
@@ -40,7 +26,6 @@ class UserViewSet(viewsets.GenericViewSet):
         return [permissions.IsAuthenticated()]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор в зависимости от действия"""
         if self.action == 'register':
             return UserRegistrationSerializer
         elif self.action in ['update', 'partial_update']:
@@ -50,16 +35,13 @@ class UserViewSet(viewsets.GenericViewSet):
         return UserSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset"""
         queryset = super().get_queryset()
         
         if self.action == 'list':
-            # Фильтрация по роли
             role = self.request.query_params.get('role', None)
             if role:
                 queryset = queryset.filter(role=role)
             
-            # Фильтрация по активности
             is_active = self.request.query_params.get('is_active', None)
             if is_active is not None:
                 queryset = queryset.filter(is_active=is_active.lower() == 'true')
@@ -113,8 +95,6 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        # Генерируем JWT токены
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -137,7 +117,6 @@ class UserViewSet(viewsets.GenericViewSet):
             serializer = UserSerializer(user)
             return Response(serializer.data)
         
-        # PUT или PATCH
         serializer = UserUpdateSerializer(
             user, 
             data=request.data, 

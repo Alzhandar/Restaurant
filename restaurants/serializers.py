@@ -1,15 +1,9 @@
-"""
-Serializers for restaurants app
-"""
-
 from rest_framework import serializers
 from .models import Restaurant, Table, Dish, CuisineType, TableLocation, DishCategory
 from users.serializers import UserMinimalSerializer
 
 
-class TableSerializer(serializers.ModelSerializer):
-    """Serializer for Table model"""
-    
+class TableSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Table
         fields = [
@@ -19,7 +13,6 @@ class TableSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
     
     def validate_capacity(self, value):
-        """Validate capacity is positive"""
         if value < 1:
             raise serializers.ValidationError("Capacity must be at least 1")
         if value > 20:
@@ -27,18 +20,14 @@ class TableSerializer(serializers.ModelSerializer):
         return value
 
 
-class TableMinimalSerializer(serializers.ModelSerializer):
-    """Minimal table info for nested serializers"""
-    
+class TableMinimalSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Table
         fields = ['id', 'table_number', 'capacity', 'location_in_restaurant']
         read_only_fields = ['id']
 
 
-class RestaurantSerializer(serializers.ModelSerializer):
-    """Serializer for Restaurant model"""
-    
+class RestaurantSerializer(serializers.ModelSerializer):    
     owner = UserMinimalSerializer(read_only=True)
     tables = TableMinimalSerializer(many=True, read_only=True)
     tables_count = serializers.SerializerMethodField()
@@ -60,19 +49,15 @@ class RestaurantSerializer(serializers.ModelSerializer):
         ]
     
     def get_tables_count(self, obj):
-        """Get total number of tables"""
         return obj.tables.count()
     
     def validate(self, attrs):
-        """Validate restaurant data"""
-        # Validate opening and closing times
         if 'opening_time' in attrs and 'closing_time' in attrs:
             if attrs['opening_time'] >= attrs['closing_time']:
                 raise serializers.ValidationError({
                     'closing_time': 'Closing time must be after opening time'
                 })
         
-        # Validate coordinates
         if 'latitude' in attrs and attrs['latitude']:
             if not (-90 <= attrs['latitude'] <= 90):
                 raise serializers.ValidationError({
@@ -88,14 +73,11 @@ class RestaurantSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        """Create restaurant with owner from request"""
         validated_data['owner'] = self.context['request'].user
         return super().create(validated_data)
 
 
-class RestaurantCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a restaurant"""
-    
+class RestaurantCreateSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Restaurant
         fields = [
@@ -106,7 +88,6 @@ class RestaurantCreateSerializer(serializers.ModelSerializer):
         ]
     
     def validate(self, attrs):
-        """Validate restaurant data"""
         if attrs['opening_time'] >= attrs['closing_time']:
             raise serializers.ValidationError({
                 'closing_time': 'Closing time must be after opening time'
@@ -114,14 +95,11 @@ class RestaurantCreateSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        """Create restaurant with owner from request"""
         validated_data['owner'] = self.context['request'].user
         return Restaurant.objects.create(**validated_data)
 
 
-class RestaurantUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating a restaurant"""
-    
+class RestaurantUpdateSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Restaurant
         fields = [
@@ -132,9 +110,7 @@ class RestaurantUpdateSerializer(serializers.ModelSerializer):
         ]
 
 
-class RestaurantListSerializer(serializers.ModelSerializer):
-    """Minimal serializer for restaurant list"""
-    
+class RestaurantListSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Restaurant
         fields = [
@@ -145,9 +121,7 @@ class RestaurantListSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class RestaurantSearchSerializer(serializers.ModelSerializer):
-    """Serializer for restaurant search results"""
-    
+class RestaurantSearchSerializer(serializers.ModelSerializer):    
     distance = serializers.FloatField(read_only=True, required=False)
     
     class Meta:
@@ -161,36 +135,27 @@ class RestaurantSearchSerializer(serializers.ModelSerializer):
 
 
 class TableCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a table"""
-    
     class Meta:
         model = Table
         fields = ['table_number', 'capacity', 'location_in_restaurant']
     
     def validate_capacity(self, value):
-        """Validate capacity"""
         if value < 1 or value > 20:
             raise serializers.ValidationError("Capacity must be between 1 and 20")
         return value
     
     def create(self, validated_data):
-        """Create table with restaurant from context"""
         validated_data['restaurant_id'] = self.context['restaurant_id']
         return Table.objects.create(**validated_data)
 
 
-class AvailableTablesSerializer(serializers.Serializer):
-    """Serializer for checking available tables"""
-    
+class AvailableTablesSerializer(serializers.Serializer):    
     date = serializers.DateField(required=True)
     time_slot = serializers.TimeField(required=True)
     guests_count = serializers.IntegerField(required=True, min_value=1, max_value=20)
     
     def validate(self, attrs):
-        """Validate availability check params"""
         from django.utils import timezone
-        
-        # Check date is not in the past
         if attrs['date'] < timezone.now().date():
             raise serializers.ValidationError({
                 'date': 'Date cannot be in the past'
@@ -199,9 +164,7 @@ class AvailableTablesSerializer(serializers.Serializer):
         return attrs
 
 
-class DishSerializer(serializers.ModelSerializer):
-    """Serializer for Dish model"""
-    
+class DishSerializer(serializers.ModelSerializer):    
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
     
     class Meta:
@@ -215,21 +178,17 @@ class DishSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def validate_price(self, value):
-        """Validate price is positive"""
         if value < 0:
             raise serializers.ValidationError("Price must be positive")
         return value
     
     def validate_preparation_time(self, value):
-        """Validate preparation time"""
         if value is not None and value < 0:
             raise serializers.ValidationError("Preparation time must be positive")
         return value
 
 
-class DishMinimalSerializer(serializers.ModelSerializer):
-    """Minimal dish info for nested serializers"""
-    
+class DishMinimalSerializer(serializers.ModelSerializer):    
     class Meta:
         model = Dish
         fields = ['id', 'name', 'price', 'category', 'is_available']
@@ -237,8 +196,6 @@ class DishMinimalSerializer(serializers.ModelSerializer):
 
 
 class DishCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a dish"""
-    
     class Meta:
         model = Dish
         fields = [
@@ -248,26 +205,21 @@ class DishCreateSerializer(serializers.ModelSerializer):
         ]
     
     def validate_price(self, value):
-        """Validate price"""
         if value < 0:
             raise serializers.ValidationError("Price must be positive")
         return value
     
     def validate_preparation_time(self, value):
-        """Validate preparation time"""
         if value is not None and value < 0:
             raise serializers.ValidationError("Preparation time must be positive")
         return value
     
     def create(self, validated_data):
-        """Create dish with restaurant from context"""
         validated_data['restaurant_id'] = self.context['restaurant_id']
         return Dish.objects.create(**validated_data)
 
 
 class DishUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating a dish"""
-    
     class Meta:
         model = Dish
         fields = [
@@ -277,21 +229,17 @@ class DishUpdateSerializer(serializers.ModelSerializer):
         ]
     
     def validate_price(self, value):
-        """Validate price"""
         if value < 0:
             raise serializers.ValidationError("Price must be positive")
         return value
     
     def validate_preparation_time(self, value):
-        """Validate preparation time"""
         if value is not None and value < 0:
             raise serializers.ValidationError("Preparation time must be positive")
         return value
 
 
-class DishListSerializer(serializers.ModelSerializer):
-    """Minimal serializer for dish list"""
-    
+class DishListSerializer(serializers.ModelSerializer):    
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
     
     class Meta:
@@ -303,9 +251,7 @@ class DishListSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
-class DishSearchSerializer(serializers.ModelSerializer):
-    """Serializer for dish search results"""
-    
+class DishSearchSerializer(serializers.ModelSerializer):    
     restaurant_name = serializers.CharField(source='restaurant.name', read_only=True)
     restaurant_city = serializers.CharField(source='restaurant.city', read_only=True)
     

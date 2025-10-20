@@ -1,6 +1,3 @@
-"""
-Views для управления отзывами с использованием ViewSet.
-"""
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -19,21 +16,10 @@ from core.permissions import IsReviewAuthorOrReadOnly
 
 
 class ReviewViewSet(viewsets.GenericViewSet):
-    """
-    ViewSet для управления отзывами.
-    
-    list: Список отзывов (с фильтрацией)
-    retrieve: Детали отзыва
-    create: Создание отзыва (только для авторизованных)
-    update: Обновление отзыва (только автор)
-    partial_update: Частичное обновление отзыва
-    destroy: Удаление отзыва (только автор или admin)
-    """
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
     
     def get_permissions(self):
-        """Определяем права доступа"""
         if self.action in ['list', 'retrieve', 'latest']:
             return [permissions.AllowAny()]
         elif self.action == 'create':
@@ -41,7 +27,6 @@ class ReviewViewSet(viewsets.GenericViewSet):
         return [permissions.IsAuthenticated(), IsReviewAuthorOrReadOnly()]
     
     def get_serializer_class(self):
-        """Выбираем сериализатор"""
         if self.action == 'create':
             return ReviewCreateSerializer
         elif self.action in ['update', 'partial_update']:
@@ -51,23 +36,19 @@ class ReviewViewSet(viewsets.GenericViewSet):
         return ReviewSerializer
     
     def get_queryset(self):
-        """Фильтрация queryset"""
         queryset = super().get_queryset().select_related(
             'user', 'restaurant', 'reservation'
         ).order_by('-created_at')
         
         if self.action == 'list':
-            # Фильтр по ресторану
             restaurant_id = self.request.query_params.get('restaurant', None)
             if restaurant_id:
                 queryset = queryset.filter(restaurant_id=restaurant_id)
             
-            # Фильтр по пользователю
             user_id = self.request.query_params.get('user', None)
             if user_id:
                 queryset = queryset.filter(user_id=user_id)
             
-            # Фильтр по рейтингу
             min_rating = self.request.query_params.get('min_rating', None)
             if min_rating:
                 queryset = queryset.filter(rating__gte=int(min_rating))
@@ -173,13 +154,11 @@ class ReviewViewSet(viewsets.GenericViewSet):
                 }
             }, status=status.HTTP_200_OK)
         
-        # Вычисляем статистику
         stats = reviews.aggregate(
             total=Count('id'),
             average=Avg('rating')
         )
         
-        # Распределение по рейтингам
         distribution = {
             '5': reviews.filter(rating=5).count(),
             '4': reviews.filter(rating=4).count(),
@@ -203,7 +182,6 @@ class ReviewViewSet(viewsets.GenericViewSet):
         """
         user = request.user
         
-        # Проверяем, есть ли завершенное бронирование
         completed_reservations = Reservation.objects.filter(
             user=user,
             restaurant_id=restaurant_id,
@@ -216,7 +194,6 @@ class ReviewViewSet(viewsets.GenericViewSet):
                 'reason': 'You need to have a completed reservation to leave a review.'
             }, status=status.HTTP_200_OK)
         
-        # Проверяем, не оставлен ли уже отзыв
         existing_review = Review.objects.filter(
             user=user,
             restaurant_id=restaurant_id

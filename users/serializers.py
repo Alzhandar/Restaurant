@@ -1,15 +1,9 @@
-"""
-Serializers for users app
-"""
-
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import User, UserRole
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Serializer for user registration"""
-    
+class UserRegistrationSerializer(serializers.ModelSerializer):    
     password = serializers.CharField(
         write_only=True,
         required=True,
@@ -31,7 +25,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
     
     def validate(self, attrs):
-        """Validate that passwords match"""
         if attrs['password'] != attrs['password_confirm']:
             raise serializers.ValidationError({
                 "password": "Password fields didn't match."
@@ -39,7 +32,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return attrs
     
     def validate_role(self, value):
-        """Validate role - guests can only register as guest"""
         if value != UserRole.GUEST:
             raise serializers.ValidationError(
                 "You can only register as a guest. Contact admin for other roles."
@@ -47,7 +39,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        """Create user with hashed password"""
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
         
@@ -59,8 +50,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer for user details"""
-    
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     
     class Meta:
@@ -72,17 +61,13 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'role', 'created_at']
 
 
-class UserUpdateSerializer(serializers.ModelSerializer):
-    """Serializer for updating user profile"""
-    
+class UserUpdateSerializer(serializers.ModelSerializer):    
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'phone']
 
 
-class PasswordChangeSerializer(serializers.Serializer):
-    """Serializer for changing password"""
-    
+class PasswordChangeSerializer(serializers.Serializer):    
     old_password = serializers.CharField(
         required=True,
         style={'input_type': 'password'}
@@ -98,7 +83,6 @@ class PasswordChangeSerializer(serializers.Serializer):
     )
     
     def validate(self, attrs):
-        """Validate that new passwords match"""
         if attrs['new_password'] != attrs['new_password_confirm']:
             raise serializers.ValidationError({
                 "new_password": "New password fields didn't match."
@@ -106,14 +90,12 @@ class PasswordChangeSerializer(serializers.Serializer):
         return attrs
     
     def validate_old_password(self, value):
-        """Validate that old password is correct"""
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is incorrect.")
         return value
     
     def save(self):
-        """Change user password"""
         user = self.context['request'].user
         user.set_password(self.validated_data['new_password'])
         user.save()
@@ -121,8 +103,6 @@ class PasswordChangeSerializer(serializers.Serializer):
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
-    """Minimal user info for nested serializers"""
-    
     full_name = serializers.CharField(source='get_full_name', read_only=True)
     
     class Meta:

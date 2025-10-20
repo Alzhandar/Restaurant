@@ -1,7 +1,3 @@
-"""
-Review models for Restaurant Reservation System
-"""
-
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -9,14 +5,6 @@ from django.core.exceptions import ValidationError
 
 
 class Review(models.Model):
-    """
-    Review model
-    
-    Represents a review for a restaurant.
-    Users can only review restaurants where they have completed reservations.
-    """
-    
-    # Relations
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -41,7 +29,6 @@ class Review(models.Model):
         help_text='Reservation this review is based on'
     )
     
-    # Review Content
     rating = models.PositiveSmallIntegerField(
         'rating',
         validators=[MinValueValidator(1), MaxValueValidator(5)],
@@ -52,7 +39,6 @@ class Review(models.Model):
         help_text='Review text'
     )
     
-    # Timestamps
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField('updated at', auto_now=True)
     
@@ -71,10 +57,8 @@ class Review(models.Model):
         return f"{self.user.email} - {self.restaurant.name} - {self.rating}/5"
     
     def clean(self):
-        """Validate review data"""
         errors = {}
         
-        # Check if user has completed reservation at this restaurant
         if hasattr(self, 'user') and hasattr(self, 'restaurant'):
             from reservations.models import ReservationStatus
             
@@ -88,7 +72,6 @@ class Review(models.Model):
                     'You can only review restaurants where you have completed reservations'
                 )
         
-        # Check if user already reviewed this restaurant
         if hasattr(self, 'user') and hasattr(self, 'restaurant'):
             existing_review = Review.objects.filter(
                 user=self.user,
@@ -102,12 +85,10 @@ class Review(models.Model):
             raise ValidationError(errors)
     
     def save(self, *args, **kwargs):
-        """Override save to run validation and update restaurant rating"""
         self.full_clean()
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Update restaurant rating
         if is_new or 'rating' in kwargs.get('update_fields', []):
             self.restaurant.update_rating()
 

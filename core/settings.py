@@ -15,20 +15,16 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables from .env file
 load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-mqz+()(v^w5yk_9_5ga6q0wrvl22-rq=oy06d2ibz@)&ztz5!+')
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -61,8 +57,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # CORS должен быть перед CommonMiddleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # Для статики в production
+    "corsheaders.middleware.CorsMiddleware",  
+    "whitenoise.middleware.WhiteNoiseMiddleware",  
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -159,13 +155,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Custom User Model
 AUTH_USER_MODEL = "users.User"
 
-
-# ============================================
-# REST FRAMEWORK CONFIGURATION
-# ============================================
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -196,13 +187,10 @@ REST_FRAMEWORK = {
 }
 
 
-# ============================================
-# JWT CONFIGURATION
-# ============================================
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME', '15'))),
-    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME', '43200'))),  # 30 days
+    'REFRESH_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME', '43200'))), 
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
@@ -225,10 +213,6 @@ SIMPLE_JWT = {
 }
 
 
-# ============================================
-# REDIS & CACHING
-# ============================================
-
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -238,21 +222,15 @@ CACHES = {
             "SOCKET_CONNECT_TIMEOUT": 5,
             "SOCKET_TIMEOUT": 5,
             "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
-            "IGNORE_EXCEPTIONS": True,  # Не падать если Redis недоступен
+            "IGNORE_EXCEPTIONS": True, 
         },
         "KEY_PREFIX": "restaurant",
-        "TIMEOUT": 300,  # 5 minutes default
+        "TIMEOUT": 300,  
     }
 }
 
-# Session в Redis
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
-
-
-# ============================================
-# CELERY CONFIGURATION
-# ============================================
 
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/2')
@@ -264,12 +242,6 @@ CELERY_ENABLE_UTC = True
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
 
-
-# ============================================
-# CORS CONFIGURATION
-# ============================================
-
-# В development разрешаем все origins для тестирования Swagger
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
@@ -291,16 +263,10 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# CSRF для API (отключаем для DRF, используем JWT)
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'http://127.0.0.1:8000',
 ]
-
-
-# ============================================
-# DRF SPECTACULAR (OpenAPI/Swagger)
-# ============================================
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Restaurant Reservation API',
@@ -310,11 +276,6 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': '/api/',
 }
-
-
-# ============================================
-# LOGGING CONFIGURATION
-# ============================================
 
 LOGGING = {
     'version': 1,
@@ -337,7 +298,7 @@ LOGGING = {
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'logs' / 'django.log',
-            'maxBytes': 1024 * 1024 * 10,  # 10MB
+            'maxBytes': 1024 * 1024 * 10, 
             'backupCount': 5,
             'formatter': 'verbose',
         },
@@ -372,11 +333,6 @@ LOGGING = {
     },
 }
 
-
-# ============================================
-# SECURITY SETTINGS
-# ============================================
-
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
@@ -384,11 +340,6 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-
-
-# ============================================
-# PHONE NUMBER FIELD
-# ============================================
 
 PHONENUMBER_DEFAULT_REGION = 'RU'
 PHONENUMBER_DB_FORMAT = 'INTERNATIONAL'

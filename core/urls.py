@@ -26,22 +26,18 @@ from drf_spectacular.views import (
 )
 
 urlpatterns = [
-    # Admin panel
     path("admin/", admin.site.urls),
     
-    # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     
-    # API endpoints
     path('api/users/', include('users.urls')),
     path('api/restaurants/', include('restaurants.urls')),
     path('api/reservations/', include('reservations.urls')),
     path('api/reviews/', include('reviews.urls')),
 ]
 
-# Debug toolbar в development режиме
 if settings.DEBUG:
     try:
         import debug_toolbar

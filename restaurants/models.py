@@ -1,7 +1,3 @@
-"""
-Restaurant and Table models for Restaurant Reservation System
-"""
-
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
@@ -9,7 +5,6 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 class CuisineType(models.TextChoices):
-    """Types of cuisine"""
     ITALIAN = 'italian', 'Итальянская'
     JAPANESE = 'japanese', 'Японская'
     CHINESE = 'chinese', 'Китайская'
@@ -25,14 +20,6 @@ class CuisineType(models.TextChoices):
 
 
 class Restaurant(models.Model):
-    """
-    Restaurant model
-    
-    Represents a restaurant in the system.
-    Each restaurant has an owner, location, and operating hours.
-    """
-    
-    # Owner
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -41,7 +28,6 @@ class Restaurant(models.Model):
         help_text='Restaurant owner'
     )
     
-    # Basic Information
     name = models.CharField(
         'name',
         max_length=200,
@@ -59,7 +45,6 @@ class Restaurant(models.Model):
         help_text='Type of cuisine'
     )
     
-    # Contact Information
     phone = PhoneNumberField(
         'phone number',
         help_text='Contact phone number'
@@ -99,7 +84,6 @@ class Restaurant(models.Model):
         help_text='Longitude coordinate'
     )
     
-    # Operating Hours
     opening_time = models.TimeField(
         'opening time',
         help_text='Restaurant opening time'
@@ -109,7 +93,6 @@ class Restaurant(models.Model):
         help_text='Restaurant closing time'
     )
     
-    # Ratings
     average_rating = models.DecimalField(
         'average rating',
         max_digits=3,
@@ -124,14 +107,12 @@ class Restaurant(models.Model):
         help_text='Total number of reviews'
     )
     
-    # Status
     is_active = models.BooleanField(
         'active',
         default=True,
         help_text='Is restaurant active and accepting reservations'
     )
     
-    # Timestamps
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField('updated at', auto_now=True)
     
@@ -152,7 +133,6 @@ class Restaurant(models.Model):
         return f"{self.name} ({self.city})"
     
     def update_rating(self):
-        """Update average rating based on reviews"""
         from reviews.models import Review
         
         reviews = Review.objects.filter(restaurant=self)
@@ -168,7 +148,6 @@ class Restaurant(models.Model):
 
 
 class TableLocation(models.TextChoices):
-    """Location of table in restaurant"""
     MAIN_HALL = 'main_hall', 'Основной зал'
     TERRACE = 'terrace', 'Терраса'
     VIP_ROOM = 'vip_room', 'VIP зал'
@@ -177,7 +156,6 @@ class TableLocation(models.TextChoices):
 
 
 class DishCategory(models.TextChoices):
-    """Categories of dishes"""
     APPETIZER = 'appetizer', 'Закуски'
     SOUP = 'soup', 'Супы'
     SALAD = 'salad', 'Салаты'
@@ -189,13 +167,6 @@ class DishCategory(models.TextChoices):
 
 
 class Table(models.Model):
-    """
-    Table model
-    
-    Represents a table in a restaurant.
-    Tables have capacity and location within the restaurant.
-    """
-    
     restaurant = models.ForeignKey(
         Restaurant,
         on_delete=models.CASCADE,
@@ -230,7 +201,6 @@ class Table(models.Model):
         help_text='Is table available for reservations'
     )
     
-    # Timestamps
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField('updated at', auto_now=True)
     
@@ -250,13 +220,6 @@ class Table(models.Model):
 
 
 class Dish(models.Model):
-    """
-    Dish model
-    
-    Represents a dish in a restaurant's menu.
-    Each dish belongs to a restaurant and has category, price, and description.
-    """
-    
     restaurant = models.ForeignKey(
         Restaurant,
         on_delete=models.CASCADE,
@@ -265,7 +228,6 @@ class Dish(models.Model):
         help_text='Restaurant this dish belongs to'
     )
     
-    # Basic Information
     name = models.CharField(
         'name',
         max_length=200,
@@ -292,7 +254,6 @@ class Dish(models.Model):
         help_text='Dish price'
     )
     
-    # Additional Information
     preparation_time = models.PositiveSmallIntegerField(
         'preparation time',
         null=True,
@@ -320,14 +281,12 @@ class Dish(models.Model):
         help_text='Is dish spicy'
     )
     
-    # Availability
     is_available = models.BooleanField(
         'available',
         default=True,
         help_text='Is dish available for ordering'
     )
     
-    # Timestamps
     created_at = models.DateTimeField('created at', auto_now_add=True)
     updated_at = models.DateTimeField('updated at', auto_now=True)
     
