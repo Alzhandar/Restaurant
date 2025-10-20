@@ -34,7 +34,7 @@ class ReservationViewSet(viewsets.GenericViewSet):
         user = self.request.user
         queryset = super().get_queryset().select_related(
             'user', 'restaurant', 'table'
-        ).order_by('-reservation_date', '-start_time')
+        ).order_by('-date', '-time_slot')
         
         if user.is_owner and not user.is_admin_user:
             queryset = queryset.filter(restaurant__owner=user)
@@ -53,9 +53,9 @@ class ReservationViewSet(viewsets.GenericViewSet):
             date_from = self.request.query_params.get('date_from', None)
             date_to = self.request.query_params.get('date_to', None)
             if date_from:
-                queryset = queryset.filter(reservation_date__gte=date_from)
+                queryset = queryset.filter(date__gte=date_from)
             if date_to:
-                queryset = queryset.filter(reservation_date__lte=date_to)
+                queryset = queryset.filter(date__lte=date_to)
         
         return queryset
     
@@ -125,7 +125,7 @@ class ReservationViewSet(viewsets.GenericViewSet):
         queryset = Reservation.objects.filter(
             user=request.user
         ).select_related('user', 'restaurant', 'table').order_by(
-            '-reservation_date', '-start_time'
+            '-date', '-time_slot'
         )
         
         serializer = ReservationListSerializer(queryset, many=True)
@@ -140,11 +140,11 @@ class ReservationViewSet(viewsets.GenericViewSet):
         today = timezone.now().date()
         
         queryset = Reservation.objects.filter(
-            reservation_date__gte=today
+            date__gte=today
         ).exclude(
             status__in=[ReservationStatus.CANCELLED, ReservationStatus.NO_SHOW]
         ).select_related('user', 'restaurant', 'table').order_by(
-            'reservation_date', 'start_time'
+            'date', 'time_slot'
         )
         
         if user.is_owner and not user.is_admin_user:
@@ -164,9 +164,9 @@ class ReservationViewSet(viewsets.GenericViewSet):
         today = timezone.now().date()
         
         queryset = Reservation.objects.filter(
-            reservation_date__lt=today
+            date__lt=today
         ).select_related('user', 'restaurant', 'table').order_by(
-            '-reservation_date', '-start_time'
+            '-date', '-time_slot'
         )
         
         if user.is_owner and not user.is_admin_user:

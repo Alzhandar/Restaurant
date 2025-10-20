@@ -492,12 +492,6 @@ restaurant-reservation/
 
 ---
 
-## 📞 Контакты
-
-- **Email:** your.email@example.com
-- **GitHub:** https://github.com/yourusername
-- **Telegram:** @yourusername
-
 ---
 
 ## 📖 Дополнительная документация
