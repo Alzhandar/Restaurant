@@ -17,7 +17,7 @@
 
 ---
 
-## Архитектура (текстовое описание)
+## Архитектура и Стэк
 
 - **Входной трафик** идёт от клиентов (web / mobile) на **Nginx / load balancer**, который:
   - терминирует SSL
@@ -216,6 +216,7 @@ Reference:
 1) https://habr.com
 2) https://learn.microsoft.com
 3) https://ru.vstack.com
+
 
 
 
