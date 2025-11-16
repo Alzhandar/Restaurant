@@ -45,7 +45,7 @@
 
 - валидацию входных данных
 - проверку доступности столика по дате/времени
-- транзакцию в БД 
+- транзакции в БД 
 - инвалидацию кэша Redis по ключам доступности столиков
 - публикацию задания в очередь для отправки подтверждения и напоминаний
 
@@ -53,7 +53,7 @@
 
 ## Запуск в Docker
 
-### Development (с hot‑reload)
+### Разработка
 
 **Требования:**
 - Docker 24.0+
@@ -87,7 +87,7 @@ docker-compose -f docker-compose.dev.yml exec web python manage.py createsuperus
 
 ---
 
-### Production (базовый сценарий)
+### Продакшн
 
 ```bash
 # 1. Создать .env для production
@@ -217,6 +217,7 @@ Reference:
 1) https://habr.com
 2) https://learn.microsoft.com
 3) https://ru.vstack.com
+
 
 
 
