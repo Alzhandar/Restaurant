@@ -134,8 +134,9 @@ docker-compose exec web python manage.py createsuperuser
 - **Переменные окружения:** `docs/ENVIRONMENT_VARIABLES.md`
 - **Прогресс/чек‑лист по заданию курса:** `PROGRESS.md`
 
+---
 
-Ответы на вопросы:
+## Ответы на вопросы:
 
 1.Как выбор структуры базы данных (SQL или NoSQL) влияет на дизайн CRUD API?
 
@@ -216,6 +217,7 @@ Reference:
 1) https://habr.com
 2) https://learn.microsoft.com
 3) https://ru.vstack.com
+
 
 
 
