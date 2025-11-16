@@ -17,7 +17,7 @@
 
 ---
 
-## Архитектура и Стэк
+## Архитектура
 
 - **Входной трафик** идёт от клиентов (web / mobile) на **Nginx / load balancer**, который:
   - терминирует SSL
@@ -48,6 +48,19 @@
 - транзакции в БД 
 - инвалидацию кэша Redis по ключам доступности столиков
 - публикацию задания в очередь для отправки подтверждения и напоминаний
+
+---
+
+## Стэк технологий
+
+[![Nginx][Nginx]][Nginx-url]
+[![Django][Django]][Django-url]
+[![Django REST Framework][DRF]][DRF-url]
+[![Simple JWT][SimpleJWT]][SimpleJWT-url]
+[![DRF Spectacular][Spectacular]][Spectacular-url]
+[![PostgreSQL][Postgres]][Postgres-url]
+[![Redis][Redis]][Redis-url]
+[![Celery][Celery]][Celery-url]
 
 ---
 
@@ -217,6 +230,7 @@ Reference:
 1) https://habr.com
 2) https://learn.microsoft.com
 3) https://ru.vstack.com
+
 
 
 
