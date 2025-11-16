@@ -2,6 +2,8 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Q
+from django.core.cache import cache
+from django.utils.http import urlencode
 
 from .models import Restaurant, Table, Dish
 from .serializers import (
@@ -68,14 +70,27 @@ class RestaurantViewSet(viewsets.GenericViewSet):
     
     def list(self, request, *args, **kwargs):
         """GET /api/restaurants/ - список ресторанов"""
+        params = request.query_params.dict()
+        key = 'restaurants:list:' + urlencode(sorted(params.items())) if params else 'restaurants:list:all'
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        cache.set(key, serializer.data, timeout=60 * 5) 
         return Response(serializer.data)
     
     def retrieve(self, request, *args, **kwargs):
         """GET /api/restaurants/<id>/ - детали ресторана"""
         instance = self.get_object()
+        key = f'restaurant:detail:{instance.id}'
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         serializer = self.get_serializer(instance)
+        cache.set(key, serializer.data, timeout=60 * 10)  
         return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):
@@ -83,6 +98,7 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(owner=request.user)
+        cache.delete('restaurants:list:all')
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def update(self, request, *args, **kwargs):
@@ -92,6 +108,9 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        instance = self.get_object()
+        cache.delete(f'restaurant:detail:{instance.id}')
+        cache.delete('restaurants:list:all')
         return Response(serializer.data)
     
     def partial_update(self, request, *args, **kwargs):
@@ -101,6 +120,8 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        cache.delete(f'restaurant:detail:{instance.id}')
+        cache.delete('restaurants:list:all')
         return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
@@ -108,6 +129,8 @@ class RestaurantViewSet(viewsets.GenericViewSet):
         instance = self.get_object()
         self.check_object_permissions(request, instance)
         instance.delete()
+        cache.delete('restaurants:list:all')
+        cache.delete(f'restaurant:detail:{instance.id}')
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])

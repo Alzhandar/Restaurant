@@ -2,6 +2,8 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Avg, Count
+from django.core.cache import cache
+from django.utils.http import urlencode
 
 from .models import Review
 from .serializers import (
@@ -57,21 +59,37 @@ class ReviewViewSet(viewsets.GenericViewSet):
     
     def list(self, request, *args, **kwargs):
         """GET /api/reviews/ - список отзывов"""
+        params = request.query_params.dict()
+        key = 'reviews:list:' + urlencode(sorted(params.items())) if params else 'reviews:list:all'
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
+        cache.set(key, serializer.data, timeout=60 * 3) 
         return Response(serializer.data)
     
     def retrieve(self, request, *args, **kwargs):
         """GET /api/reviews/<id>/ - детали отзыва"""
         instance = self.get_object()
+        key = f'review:detail:{instance.id}'
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         serializer = self.get_serializer(instance)
+        cache.set(key, serializer.data, timeout=60 * 5)
         return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):
         """POST /api/reviews/ - создание отзыва"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
+        review = serializer.save(user=request.user)
+        cache.delete('reviews:list:all')
+        cache.delete(f'reviews:restaurant:{review.restaurant_id}:stats')
+        cache.delete(f'restaurant:detail:{review.restaurant_id}')
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def update(self, request, *args, **kwargs):
@@ -81,6 +99,10 @@ class ReviewViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(instance, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        cache.delete(f'review:detail:{instance.id}')
+        cache.delete('reviews:list:all')
+        cache.delete(f'reviews:restaurant:{instance.restaurant_id}:stats')
+        cache.delete(f'restaurant:detail:{instance.restaurant_id}')
         return Response(serializer.data)
     
     def partial_update(self, request, *args, **kwargs):
@@ -90,13 +112,23 @@ class ReviewViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        cache.delete(f'review:detail:{instance.id}')
+        cache.delete('reviews:list:all')
+        cache.delete(f'reviews:restaurant:{instance.restaurant_id}:stats')
+        cache.delete(f'restaurant:detail:{instance.restaurant_id}')
         return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """DELETE /api/reviews/<id>/ - удаление отзыва"""
         instance = self.get_object()
         self.check_object_permissions(request, instance)
+        restaurant_id = instance.restaurant_id
+        review_id = instance.id
         instance.delete()
+        cache.delete(f'review:detail:{review_id}')
+        cache.delete('reviews:list:all')
+        cache.delete(f'reviews:restaurant:{restaurant_id}:stats')
+        cache.delete(f'restaurant:detail:{restaurant_id}')
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=False, methods=['get'])
@@ -142,17 +174,24 @@ class ReviewViewSet(viewsets.GenericViewSet):
         """
         GET /api/reviews/restaurant/<restaurant_id>/stats/ - статистика отзывов
         """
+        key = f'reviews:restaurant:{restaurant_id}:stats'
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         reviews = Review.objects.filter(restaurant_id=restaurant_id)
         
         if not reviews.exists():
-            return Response({
+            data = {
                 'restaurant_id': restaurant_id,
                 'total_reviews': 0,
                 'average_rating': 0,
                 'rating_distribution': {
                     '5': 0, '4': 0, '3': 0, '2': 0, '1': 0
                 }
-            }, status=status.HTTP_200_OK)
+            }
+            cache.set(key, data, timeout=60 * 10)
+            return Response(data, status=status.HTTP_200_OK)
         
         stats = reviews.aggregate(
             total=Count('id'),
@@ -167,12 +206,14 @@ class ReviewViewSet(viewsets.GenericViewSet):
             '1': reviews.filter(rating=1).count(),
         }
         
-        return Response({
+        data = {
             'restaurant_id': restaurant_id,
             'total_reviews': stats['total'],
             'average_rating': round(stats['average'], 2) if stats['average'] else 0,
             'rating_distribution': distribution
-        }, status=status.HTTP_200_OK)
+        }
+        cache.set(key, data, timeout=60 * 10)
+        return Response(data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'], url_path='restaurant/(?P<restaurant_id>[^/.]+)/can-review',
             permission_classes=[permissions.IsAuthenticated])
