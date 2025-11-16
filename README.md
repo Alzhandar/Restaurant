@@ -231,6 +231,29 @@ Reference:
 2) https://learn.microsoft.com
 3) https://ru.vstack.com
 
+[Nginx]: https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white
+[Nginx-url]: https://nginx.org/
+
+[Django]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white
+[Django-url]: https://www.djangoproject.com/
+
+[DRF]: https://img.shields.io/badge/DRF-ff1709?style=for-the-badge&logo=django&logoColor=white
+[DRF-url]: https://www.django-rest-framework.org/
+
+[SimpleJWT]: https://img.shields.io/badge/SimpleJWT-blue?style=for-the-badge
+[SimpleJWT-url]: https://github.com/jazzband/djangorestframework-simplejwt
+
+[Spectacular]: https://img.shields.io/badge/DRF_Spectacular-4B8BBE?style=for-the-badge
+[Spectacular-url]: https://drf-spectacular.readthedocs.io/
+
+[Postgres]: https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white
+[Postgres-url]: https://www.postgresql.org/
+
+[Redis]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
+[Redis-url]: https://redis.io/
+
+[Celery]: https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white
+[Celery-url]: https://docs.celeryq.dev/
 
 
 
